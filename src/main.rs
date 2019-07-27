@@ -13,6 +13,8 @@ grammar ink_parser() for str {
             stitch:stitch() { Expr::Stitch(stitch) } /
             option:option() { Expr::Opt(option) } /
             divert:divert() { Expr::Divert(divert) } /
+            cond:cond()     { Expr::Conditional(cond) } /
+            todo:todo()     { Expr::Todo(todo) } /
             gather() /
             line:line()     { Expr::Line(line) }
         ) ** wn() /*Catch everything else after this temporarily*/ [_]* ![_] { exprs }
@@ -60,6 +62,7 @@ grammar ink_parser() for str {
     // Tokens that stop text parsing in a line
     rule text_stop() -> LineExpr = 
         divert:divert() { LineExpr::Divert(divert) } /
+        conditional:cond() { LineExpr::Conditional(conditional) } /
         glue()
 
     // Normal text inside of a line
@@ -79,20 +82,27 @@ grammar ink_parser() for str {
     rule stitch() -> String = w() "=" w() name:$identifier() w() "\n" { name.into() }
     
     // A gather
-    rule gather() -> Expr = w() "-" " "? { Expr::Gather }
+    rule gather() -> Expr = w() n:$("-" " "?)+ { Expr::Gather(n.len() as u16) }
 
     // An option
-    rule option() -> Opt = w() def:$("*" / "+") " "? line:line()
+    rule option() -> Opt = w() def:($("*" " "?)+ / $("+" " "?)+) " "? line:line()
         {
             Opt {
                 line,
-                option_kind: match def {
+                option_kind: match def[0].trim() {
                     "*" => OptKind::Star,
                     "+" => OptKind::Plus,
                     _ => unreachable!()
-                }
+                },
+                depth: def.len() as u16
             }
         }
+
+    // A todo
+    rule todo() -> String = "TODO:" todo:$((!"\n" [_])*) ("\n" / ![_]) { todo.into() }
+    
+    // A conditional
+    rule cond() -> String = "{" content:$((!"}" [_])*) "}" { content.into() }
 }}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

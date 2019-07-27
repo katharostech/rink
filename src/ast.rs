@@ -7,7 +7,10 @@ pub enum Expr {
     Stitch(String),
     Opt(Opt),
     Divert(String),
-    Gather,
+    /// The u16 represents depth
+    Gather(u16),
+    Todo(String),
+    Conditional(String),
 }
 
 /// A normal line in the story
@@ -19,6 +22,7 @@ pub struct Line(pub Vec<LineExpr>);
 pub enum LineExpr {
     Text(String),
     Divert(String),
+    Conditional(String),
     Glue,
 }
 
@@ -35,6 +39,7 @@ pub struct Var {
 pub struct Opt {
     pub line: Line,
     pub option_kind: OptKind,
+    pub depth: u16,
 }
 
 /// The kind of option
