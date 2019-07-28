@@ -49,8 +49,6 @@ grammar ink_parser() for str {
         }
 
     // A line
-    // rule line() -> Line = w() content:$((!"\n" [_])*) "\n"
-    //     { Line(vec![LineExpr::Text(content.into())]) }
     rule line() -> Line =
         exprs:(
             text:text() { LineExpr::Text(text.into()) } /
@@ -73,7 +71,7 @@ grammar ink_parser() for str {
     rule divert() -> String = "-> " name:$identifier() { name.into() }
 
     // Glue
-    rule glue() -> LineExpr = _:"<>" { LineExpr::Glue }
+    rule glue() -> LineExpr = g:"<>" { LineExpr::Glue }
 
     // A knot
     rule knot() -> String = w() "===" w() name:$identifier() w() "\n" { name.into() }
@@ -85,7 +83,7 @@ grammar ink_parser() for str {
     rule gather() -> Expr = w() n:$("-" " "?)+ { Expr::Gather(n.len() as u16) }
 
     // An option
-    rule option() -> Opt = w() def:($("*" " "?)+ / $("+" " "?)+) " "? line:line()
+    rule option() -> Opt = w() def:($("*" " "?)+ / $("+" " "?)+) w() cond:cond()? " "? line:line()
         {
             Opt {
                 line,
@@ -94,7 +92,8 @@ grammar ink_parser() for str {
                     "+" => OptKind::Plus,
                     _ => unreachable!()
                 },
-                depth: def.len() as u16
+                depth: def.len() as u16,
+                condition: cond,
             }
         }
 
@@ -102,7 +101,7 @@ grammar ink_parser() for str {
     rule todo() -> String = "TODO:" todo:$((!"\n" [_])*) ("\n" / ![_]) { todo.into() }
     
     // A conditional
-    rule cond() -> String = "{" content:$((!"}" [_])*) "}" { content.into() }
+    rule cond() -> Conditional = "{" content:$((!"}" [_])*) "}" { Conditional(content.into()) }
 }}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

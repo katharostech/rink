@@ -10,7 +10,7 @@ pub enum Expr {
     /// The u16 represents depth
     Gather(u16),
     Todo(String),
-    Conditional(String),
+    Conditional(Conditional),
 }
 
 /// A normal line in the story
@@ -22,7 +22,7 @@ pub struct Line(pub Vec<LineExpr>);
 pub enum LineExpr {
     Text(String),
     Divert(String),
-    Conditional(String),
+    Conditional(Conditional),
     Glue,
 }
 
@@ -40,6 +40,7 @@ pub struct Opt {
     pub line: Line,
     pub option_kind: OptKind,
     pub depth: u16,
+    pub condition: Option<Conditional>,
 }
 
 /// The kind of option
@@ -48,3 +49,6 @@ pub enum OptKind {
     Plus,
     Star,
 }
+
+#[derive(Debug)]
+pub struct Conditional(pub String);
